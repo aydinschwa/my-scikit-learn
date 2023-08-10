@@ -13,11 +13,11 @@ class DecisionStump:
         self.y_high = None
 
     # 1 - (p_1)^2 - (p_2)^2 - ...
-    def gini(self, vals):
+    def gini(self, vals, weights):
         _, counts = np.unique(vals, return_counts=True)
         return 1 - np.sum((counts / np.sum(counts))**2)
 
-    def fit(self, X, y):
+    def fit(self, X, y, weights):
         
         min_loss = 1
         split_col = None
@@ -63,13 +63,13 @@ class AdaBoost:
         for _ in range(self.n_estimators): 
             # fit a decision stump
             stump = DecisionStump()
-            stump.fit(X, y)
+            stump.fit(X, y, weights)
             self.trees.append(stump)
             # make predictions on the entire dataset
             preds = np.array([stump.predict(row) for row in X])
 
             # get total prediction error
-            error = np.sum(preds != y) / len(y)
+            error = np.sum(weights[preds != y])
 
             # calculate alpha
             alpha = .5*np.log((1 - error) / (error + epsilon))
@@ -79,11 +79,6 @@ class AdaBoost:
             # update weights, normalize
             weights *= np.exp(alpha*bias_direction)
             weights /= np.sum(weights)
-
-            # resample data using the weights
-            indices = np.random.choice(np.arange(len(y)), size=len(y), p=weights)
-            X = X[indices]
-            y = y[indices]
 
     def predict(self, X):
         class_scores = {}
