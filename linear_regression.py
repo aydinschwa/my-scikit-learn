@@ -1,5 +1,7 @@
 import numpy as np
+import copy
 import matplotlib.pyplot as plt
+from error_funcs import rmse
 
 
 class GDRegression:
@@ -49,13 +51,30 @@ class GDRegression:
 
     def predict(self, X):
         return np.dot(X, self.w) + self.b 
+    
+
+class OLSRegression:
+    def __init__(self):
+        self.parameters = None
+
+    def fit(self, X, y):
+        X_copy = copy.deepcopy(X)
+        constants = np.ones((X.shape[0], 1))
+        X_copy = np.concatenate((constants, X_copy), 1) 
+        parameters = np.dot(np.dot(np.linalg.inv(np.dot(X_copy.T, X_copy)), X_copy.T), y)
+        self.b = parameters[0]
+        self.w = parameters[1:]
+
+    def predict(self, y):
+        return np.dot(y, self.w) + self.b
+
 
 if __name__ == "__main__":
     # create a datset
     n = 100
     X = np.arange(100)
     y = X + 50 + np.random.normal(loc=10, scale=15, size=n)
-    reg = GDRegression()
+    reg = OLSRegression() 
     X = np.array(X).reshape(len(X), -1)
     reg.fit(X, y)
 
@@ -66,14 +85,13 @@ if __name__ == "__main__":
 
 
     from sklearn.datasets import load_iris
-
-    # Load the iris dataset
     iris = load_iris()
     X_iris = iris.data[:, [0, 1, 3]] # Excluding petal length
     y_iris = iris.data[:, 2]  # Petal length
 
     # Initialize and fit the regressor
     reg_iris = GDRegression(n_epochs=100000, learning_rate=0.0001)
+    reg_iris = OLSRegression()
     reg_iris.fit(X_iris, y_iris)
 
     # Predict the petal length
@@ -82,4 +100,4 @@ if __name__ == "__main__":
     # Print the coefficients
     print("Coefficients (w):", reg_iris.w)
     print("Intercept (b):", reg_iris.b)
-
+    print(rmse(y_pred_iris, y_iris))
